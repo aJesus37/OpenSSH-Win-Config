@@ -13,6 +13,10 @@ Only Download the binaries, not installing:
 
 `.\OpenSSH-Win-Config.ps1 -DownloadOnly`
 
+If you are on a computer which has no Internet connection, the files at Win32-OpenSSH folder should be moved to `C:\temp\OpenSSH-Win[64|32]` and the command should be run in the same way, but without `-Download` or `-DownloadOnly`.
+
+`.\OpenSSH-Win-Config.ps1 -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
+
 ## Possible flags:
 
    **-Verbose:** Adds verbosity level to script output. Default: `$false`
