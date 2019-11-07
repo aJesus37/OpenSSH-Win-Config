@@ -1,4 +1,4 @@
-# OpenSSH-Config
+# OpenSSH-Win-Config
 A Powershell script to download and config OpenSSH for Windows operating systems.
 
 Uses the latest release of [this](https://github.com/PowerShell/Win32-OpenSSH/) GitHub repo for downloading the OpenSSH binaries.
@@ -12,9 +12,15 @@ Uses the latest release of [this](https://github.com/PowerShell/Win32-OpenSSH/) 
    **-Shell:** Defines if the default shell after ssh into the machine will be cmd or powershell. Default: `powershell`
 
    **-Architecture:** Defines if the binarie architecture will be 64 or 32 bits. Default: `64`
+   
+   **-DownloadOnly:** Only downloads the binaries to `C:\temp\`, not installing. Default: `$false`
+   
+   **-PublicKeyOnly:** Defines if only public key authentication will be enabled. Default: `$false`
+   
+   **-PublicKey:** Defines if public key authentication will be allowed. Default: `$false`
+   
+   **-KeyPath:** Defines the path to the key file for using with public key authentication. Default: `$null`
 
-# Important!
+## Issues
 
-Actual release defines that only public key authentication will be possible. Not usable for password authentication yet, changes will be made in following releases.
-
-The public key must be under `C:\temp\` directory.
+If you find any problems, please open an issue at [the issues page](https://github.com/aJesus37/OpenSSH-Config/issues)
