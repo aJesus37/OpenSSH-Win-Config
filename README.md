@@ -3,6 +3,16 @@ A Powershell script to download and config OpenSSH for Windows operating systems
 
 Uses the latest release of [this](https://github.com/PowerShell/Win32-OpenSSH/) GitHub repo for downloading the OpenSSH binaries.
 
+## Example Usage:
+
+Install OpenSSH allowing only public key authentication and installing a key:
+
+`.\OpenSSH-Win-Config.ps1 -Download -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
+
+Only Download the binaries, not installing:
+
+`.\OpenSSH-Win-Config.ps1 -DownloadOnly`
+
 ## Possible flags:
 
    **-Verbose:** Adds verbosity level to script output. Default: `$false`
