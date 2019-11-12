@@ -1,6 +1,26 @@
 param(
-    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false
+    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$ignoreCert=$true
 )
+
+if($ignoreCert){
+    ######ignore invalid SSL Certs - Do Not Change
+try {
+    add-type @"
+    using System.Net;
+    using System.Security.Cryptography.X509Certificates;
+    public class TrustAllCertsPolicy : ICertificatePolicy {
+        public bool CheckValidationResult(
+            ServicePoint srvPoint, X509Certificate certificate,
+            WebRequest request, int certificateProblem) {
+            return true;
+        }
+    }
+"@ 
+}
+catch { }
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy 
+#######################################################################################
+}
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
     Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
@@ -14,7 +34,12 @@ if (-Not (Test-Path "C:\temp")) {
 if ($Download -Or $DownloadOnly) {
     try {
         if ($Verbose) { Write-Output "[+] Downloading latest release of OpenSSH-Win$($Architecture)" }
-        Invoke-WebRequest -Uri "https://gitreleases.dev/gh/PowerShell/Win32-OpenSSH/latest/OpenSSH-Win$($Architecture).zip" -OutFile "C:\temp\OpenSSH-Win$($Architecture).zip"
+        try {
+            Invoke-WebRequest -Uri "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win$($Architecture).zip" -OutFile "C:\temp\OpenSSH-Win$($Architecture).zip"
+        } catch {
+            Write-Output "Error happened in the binarie download. Exitting...";
+            exit 1;
+        }
         if ($Verbose) { Write-Output "[+] Extracting file..." }
         Expand-Archive -LiteralPath "C:\temp\OpenSSH-Win$($Architecture).zip" -DestinationPath "C:\temp\OpenSSH-Win"
         if ($Verbose) { Write-Output "[+] Moving folder to C:\temp\" }
