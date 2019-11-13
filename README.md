@@ -38,5 +38,3 @@ If you are on a computer which has no Internet connection, the files at Win32-Op
 ## Issues
 
 If you find any problems, please open an issue at [the issues page](https://github.com/aJesus37/OpenSSH-Config/issues)
-
-test
