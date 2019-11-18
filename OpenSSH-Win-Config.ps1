@@ -76,7 +76,7 @@ Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
 $UsersPermissions = New-Object System.Security.AccessControl.FileSystemAccessRule "Users","ReadAndExecute, Synchronize", "ContainerInherit, ObjectInherit", "InheritOnly", "Allow"
 $Acl = Get-Acl C:\OpenSSH-Win64
 $Acl.SetAccessRule($UsersPermissions)
-Set-Acl C:\OpenSSH-Win64 $Acl
+Set-Acl $installDirPath $Acl
 
 if ($Verbose){Write-Output "[+] Installing sshd as service"}
 & "$installDirPath\install-sshd.ps1"
