@@ -7,6 +7,26 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
     exit 1
 }
 
+$KeyPath=Resolve-Path -Path "$KeyPath";
+$tempPath=Resolve-Path -Path "$tempPath";
+$binarieDirPath=Resolve-Path -Path "$binarieDirPath";
+
+if ($Verbose){
+    Write-Output "
+    Shell: $Shell
+    Download: $Download
+    Verbose: $Verbose
+    Architecture: $Architecture
+    DownloadOnly: $DownloadOnly
+    PublicKeyOnly: $PublicKeyOnly
+    KeyPath: $KeyPath
+    PublicKey: $PublicKey
+    sslVerify: $sslVerify
+    tempPath: $tempPath
+    binarieDirPath: $binarieDirPath
+    "
+}
+
 if (-Not (Test-Path "$tempPath")) {
     New-Item -ItemType Directory -Path "$tempPath"
 }
@@ -52,7 +72,13 @@ try {
 Write-Output "[+] Moving Folder to C:\OpenSSh-Win$($Architecture)"
 Move-Item -Path "$binarieDirPath" -Destination "C:\OpenSSH-Win$($Architecture)"
 
+$UsersPermissions = New-Object System.Security.AccessControl.FileSystemAccessRule "Users","ReadAndExecute, Synchronize", "ContainerInherit, ObjectInherit", "InheritOnly", "Allow"
+$Acl = Get-Acl C:\OpenSSH-Win64
+$Acl.SetAccessRule($UsersPermissions)
+Set-Acl C:\OpenSSH-Win64 $Acl
+
 Write-Output "[+] Installing sshd as service"
+& "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
 & "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
 
 Write-Output "[+] Adding firewall rule to Windows firewall"
