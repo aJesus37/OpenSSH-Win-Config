@@ -125,7 +125,7 @@ Set-ItemProperty -path 'hklm:\system\currentcontrolset\control\session manager\e
 
 if ($Verbose){Write-Output "Fixing permissions"}
 & "C:\OpenSSH-Win64\FixHostFilePermissions.ps1" -Confirm:$false
-& "C:\OpenSSH-Win64\FixUserFilePermissions.ps1" -Confirm:$false
+try { & "C:\OpenSSH-Win64\FixUserFilePermissions.ps1" -Confirm:$fals } catch { } # Not every user will use ssh as non-admin
 
 if ($Verbose){Write-Output "Importing module"}
 Import-Module "C:\OpenSSH-Win64\OpenSSHUtils.psm1"
