@@ -1,5 +1,5 @@
 param(
-    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false
+    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false,$tempPath="C:\temp"
 )
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
@@ -7,8 +7,8 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
     exit 1
 }
 
-if (-Not (Test-Path "C:\temp")) {
-    New-Item -ItemType Directory -Path "C:\temp"
+if (-Not (Test-Path "$tempPath")) {
+    New-Item -ItemType Directory -Path "$tempPath"
 }
 
 if ($Download -Or $DownloadOnly) {
@@ -33,12 +33,12 @@ try {
     }
     try {
         if ($Verbose) { Write-Output "[+] Downloading latest release of OpenSSH-Win$($Architecture)" }
-        Invoke-WebRequest -Uri "https://gitreleases.dev/gh/PowerShell/Win32-OpenSSH/latest/OpenSSH-Win$($Architecture).zip" -OutFile "C:\temp\OpenSSH-Win$($Architecture).zip"
+        Invoke-WebRequest -Uri "https://gitreleases.dev/gh/PowerShell/Win32-OpenSSH/latest/OpenSSH-Win$($Architecture).zip" -OutFile "$tempPath\OpenSSH-Win$($Architecture).zip"
         if ($Verbose) { Write-Output "[+] Extracting file..." }
-        Expand-Archive -LiteralPath "C:\temp\OpenSSH-Win$($Architecture).zip" -DestinationPath "C:\temp\OpenSSH-Win"
-        if ($Verbose) { Write-Output "[+] Moving folder to C:\temp\" }
-        Move-Item -LiteralPath "C:\temp\OpenSSH-Win\OpenSSH-Win$($Architecture)" -Destination "C:\temp\OpenSSH-Win$($Architecture)"
-        Remove-Item -LiteralPath "C:\temp\OpenSSH-Win" -Force
+        Expand-Archive -LiteralPath "$tempPath\OpenSSH-Win$($Architecture).zip" -DestinationPath "$tempPath\OpenSSH-Win"
+        if ($Verbose) { Write-Output "[+] Moving folder to $tempPath\" }
+        Move-Item -LiteralPath "$tempPath\OpenSSH-Win\OpenSSH-Win$($Architecture)" -Destination "$tempPath\OpenSSH-Win$($Architecture)"
+        Remove-Item -LiteralPath "$tempPath\OpenSSH-Win" -Force
     }
     catch {
         Write-Output "Erros happened while downloading or extracting the files. Please read below:`n";
@@ -50,7 +50,7 @@ try {
 }
 
 Write-Output "[+] Moving Folder to C:\OpenSSh-Win$($Architecture)"
-Move-Item -Path "C:\temp\OpenSSH-Win$($Architecture)" -Destination "C:\OpenSSH-Win$($Architecture)"
+Move-Item -Path "$tempPath\OpenSSH-Win$($Architecture)" -Destination "C:\OpenSSH-Win$($Architecture)"
 
 Write-Output "[+] Installing sshd as service"
 & "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
