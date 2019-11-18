@@ -1,5 +1,5 @@
 param(
-    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false,$tempPath="C:\temp",$binarieDirPath="$tempPath\OpenSSH-Win$($Architecture)"
+    [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false,$tempPath="C:\temp",[string]$binarieDirPath="$tempPath\OpenSSH-Win$($Architecture)",[string]$installDirPath="C:\OpenSSH-Win$($architecture)"
 )
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
@@ -10,6 +10,7 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
 $KeyPath=Resolve-Path -Path "$KeyPath";
 $tempPath=Resolve-Path -Path "$tempPath";
 $binarieDirPath=Resolve-Path -Path "$binarieDirPath";
+$installDirPath=Resolve-Path -Path "$installDirPath";
 
 if ($Verbose){
     Write-Output "
@@ -69,19 +70,19 @@ try {
     }
 }
 
-Write-Output "[+] Moving Folder to C:\OpenSSh-Win$($Architecture)"
-Move-Item -Path "$binarieDirPath" -Destination "C:\OpenSSH-Win$($Architecture)"
+if ($Verbose){Write-Output "[+] Moving Folder to $installDirPath"}
+Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
 
 $UsersPermissions = New-Object System.Security.AccessControl.FileSystemAccessRule "Users","ReadAndExecute, Synchronize", "ContainerInherit, ObjectInherit", "InheritOnly", "Allow"
 $Acl = Get-Acl C:\OpenSSH-Win64
 $Acl.SetAccessRule($UsersPermissions)
 Set-Acl C:\OpenSSH-Win64 $Acl
 
-Write-Output "[+] Installing sshd as service"
-& "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
-& "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
+if ($Verbose){Write-Output "[+] Installing sshd as service"}
+& "$installDirPath\install-sshd.ps1"
+& "$installDirPath\install-sshd.ps1"
 
-Write-Output "[+] Adding firewall rule to Windows firewall"
+if ($Verbose){Write-Output "[+] Adding firewall rule to Windows firewall"}
 try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -ErrorAction SilentlyContinue }
 catch [Microsoft.Management.Infrastructure.CimException] {
     if ($Verbose) { Write-Output "[?] Regra já criada, continuando ..." }
@@ -96,7 +97,7 @@ catch {
     catch { }
 }
 
-Write-Output "[+] Changing startup and status of services"
+if ($Verbose){Write-Output "[+] Changing startup and status of services"}
 Set-Service sshd -StartupType Automatic
 Set-Service ssh-agent -StartupType Automatic
 Start-Service sshd
@@ -104,35 +105,35 @@ Start-Service ssh-agent
 
 
 if ($shell -eq "powershell") {
-    Write-Output "Changing Default shell"
+    if ($Verbose){Write-Output "Changing Default shell"}
     New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
     New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "/c" -PropertyType String -Force
 }
 
-Write-Output "Stopping services"
+if ($Verbose){Write-Output "Stopping services"}
 Stop-Service sshd
 Stop-Service ssh-agent
 
-Write-Output "Creating administrators_authorized_keys file"
+if ($Verbose){Write-Output "Creating administrators_authorized_keys file"}
 New-Item -ItemType File -Path C:\ProgramData\ssh\administrators_authorized_keys
 
-Write-Output "Changing path"
+if ($Verbose){Write-Output "Changing path"}
 $oldSysPath = (Get-Itemproperty -path 'hklm:\system\currentcontrolset\control\session manager\environment' -Name Path).Path
 $newSysPath = $oldSysPath + ";C:\OpenSSH-Win64\"
 Set-ItemProperty -path 'hklm:\system\currentcontrolset\control\session manager\environment' -Name Path -Value $newSysPath 
 
 
-Write-Output "Fixing permissions"
+if ($Verbose){Write-Output "Fixing permissions"}
 & "C:\OpenSSH-Win64\FixHostFilePermissions.ps1" -Confirm:$false
 & "C:\OpenSSH-Win64\FixUserFilePermissions.ps1" -Confirm:$false
 
-Write-Output "Importing module"
+if ($Verbose){Write-Output "Importing module"}
 Import-Module "C:\OpenSSH-Win64\OpenSSHUtils.psm1"
 
-Write-Output "Setting content to administrators_authorized_keys file"
+if ($Verbose){Write-Output "Setting content to administrators_authorized_keys file"}
 Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
 
-Write-Output "Changing administrators_authorized_keys file"
+if ($Verbose){Write-Output "Changing administrators_authorized_keys file"}
 Repair-FilePermission -FilePath "C:\ProgramData\ssh\administrators_authorized_keys" -Confirm:$false
 
 if($PublicKeyOnly){
@@ -148,6 +149,6 @@ if($PublicKeyOnly){
     Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
 }
 
-Write-Output "Starting services"
+if ($Verbose){Write-Output "Starting services"}
 Start-Service sshd  
 Start-Service ssh-agent
