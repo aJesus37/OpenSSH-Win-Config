@@ -28,11 +28,12 @@ if ($Verbose){
     "
 }
 
-if (-Not (Test-Path "$tempPath")) {
-    New-Item -ItemType Directory -Path "$tempPath"
-}
+
 
 if ($Download -Or $DownloadOnly) {
+    if (-Not (Test-Path "$tempPath")) {
+        New-Item -ItemType Directory -Path "$tempPath"
+    }
     if (-Not $sslVerify){
 ######ignore invalid SSL Certs - Do Not Change
 try {
