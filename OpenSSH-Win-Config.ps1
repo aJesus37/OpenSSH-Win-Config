@@ -1,5 +1,5 @@
 param(
-    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false,$tempPath="C:\temp"
+    [String]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false,[switch]$PublicKeyOnly=$false,[string]$KeyPath="",[switch]$PublicKey=$false,[switch]$sslVerify=$false,$tempPath="C:\temp",$binarieDirPath="$tempPath\OpenSSH-Win$($Architecture)"
 )
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
@@ -50,7 +50,7 @@ try {
 }
 
 Write-Output "[+] Moving Folder to C:\OpenSSh-Win$($Architecture)"
-Move-Item -Path "$tempPath\OpenSSH-Win$($Architecture)" -Destination "C:\OpenSSH-Win$($Architecture)"
+Move-Item -Path "$binarieDirPath" -Destination "C:\OpenSSH-Win$($Architecture)"
 
 Write-Output "[+] Installing sshd as service"
 & "C:\OpenSSH-Win$($Architecture)\install-sshd.ps1"
