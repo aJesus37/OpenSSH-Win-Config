@@ -7,17 +7,49 @@ Uses the latest release of [this](https://github.com/PowerShell/Win32-OpenSSH/) 
 
 Install OpenSSH allowing only public key authentication and installing a key:
 
-`.\OpenSSH-Win-Config.ps1 -Download -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
+`.\OpenSSH-Win-Config.ps1 -Install -Download -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
 
 Only Download the binaries, not installing:
 
 `.\OpenSSH-Win-Config.ps1 -DownloadOnly`
 
-If you are on a computer which has no Internet connection, the files at Win32-OpenSSH folder should be moved to `C:\temp\OpenSSH-Win[64|32]` and the command should be run in the same way, but without `-Download` or `-DownloadOnly`.
+If you are on a computer which has no Internet connection, you need to pass the path to the files to the -binarieDirPath flag, and the command should be run in the same way, but without `-Download` or `-DownloadOnly`.
 
-`.\OpenSSH-Win-Config.ps1 -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
+`.\OpenSSH-Win-Config.ps1 -Install -binarieDirPath "C:\temp\OpenSSH-Win64" -PublicKeyOnly -KeyPath "C:\temp\key.pub"`
+
+Adds a new key to the administrators_authorized_keys file
+
+`.\OpenSSH-Win-Config.ps1 -Config -AddKey -KeyPath "C:\temp\key.pub"`
+
+Fixes the file permissions needed by OpenSSH
+
+`.\OpenSSH-Win-Config.ps1 -Config -FilePermissions`
+
+Fixes the file permissions on the directory where OpenSSH is installed
+
+`.\OpenSSH-Win-Config.ps1 -Config -InstallDirPermissions -InstallDirPath "C:\OpenSSH-Win64"`
 
 ## Possible flags:
+
+   **-Install:** Needed if you pretend to install OpenSSH on Windows. Default: `$false`
+
+   **-Config:** Configuration related, demands OpenSSH installed. Default: `$false`
+
+   **-Uninstall:** Uninstalls OpenSSH from the machine. Default: `$false`
+
+   **-TempPath:** Path used for temporary files like downloading and extracting from github. Default: `C:\temp`
+
+   **-BinarieDirPath:** The path to thebinaries folder for the OpenSSH software. Default: `$TempPath\OpenSSH-Win$($Architecture)`
+
+   **-InstallDirPath:** The path where OpenSSH will be installed. Default: `C:\OpenSSH-Win$($Architecture)`
+
+   **-FilePermissions** Used with the -Config flag, used when you want to correct the permissions of files used by the OpenSSH software. Default: `$false`
+
+   **-InstallDirPermissions:** Used with the -Config flag, used when you want to correct the permissions of the directory where OpenSSH was installed. Default: `$false`
+
+   **-AddPublicKey:** Used with the -Config flag, used when you want to add another key to the administrators_authorized_keys file. Needs a KeyPath defined. Default: `$false`
+
+   **-sslVerify:** Checks for valid certificate. Used with the -Download flag. Default: `$false`
 
    **-Verbose:** Adds verbosity level to script output. Default: `$false`
 
@@ -34,6 +66,8 @@ If you are on a computer which has no Internet connection, the files at Win32-Op
    **-PublicKey:** Defines if public key authentication will be allowed. Default: `$false`
    
    **-KeyPath:** Defines the path to the key file for using with public key authentication. Default: `$null`
+
+
 
 ## Issues
 
