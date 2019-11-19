@@ -7,9 +7,20 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
     exit 1
 }
 
-try { $KeyPath = Resolve-Path -Path "$KeyPath" 2> $null } catch { } # Supress when no key is given
-$tempPath = Resolve-Path -Path "$tempPath";
-try { $binarieDirPath = Resolve-Path -Path "$binarieDirPath" 2> $null } catch { } # Supress when folder not yet exists
+$tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore
+if($tempVar){
+    $KeyPath = $tempVar; Clear-Variable tempVar
+}
+
+$tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore
+if($tempVar){
+    $tempPath = $tempVar; Clear-Variable tempVar
+}
+
+$tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore
+if($tempVar){
+    $binarieDirPath = $tempVar; Clear-Variable tempVar
+}
 
 if ($Verbose) {
     Write-Output "
@@ -51,7 +62,7 @@ function Get-Download {
         }
         try {
             if ($Verbose) { Write-Output "[+] Downloading latest release of OpenSSH-Win$($Architecture)" }
-            Invoke-WebRequest -Uri "https://gitreleases.dev/gh/PowerShell/Win32-OpenSSH/latest/OpenSSH-Win$($Architecture).zip" -OutFile "$tempPath\OpenSSH-Win$($Architecture).zip"
+            Invoke-WebRequest -Uri "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win$($Architecture).zip" -OutFile "$tempPath\OpenSSH-Win$($Architecture).zip"
             if ($Verbose) { Write-Output "[+] Extracting file..." }
             Expand-Archive -LiteralPath "$tempPath\OpenSSH-Win$($Architecture).zip" -DestinationPath "$tempPath\OpenSSH-Win"
             if ($Verbose) { Write-Output "[+] Moving folder to $tempPath\" }
@@ -61,6 +72,7 @@ function Get-Download {
         catch {
             Write-Output "Erros happened while downloading or extracting the files. Please read below:`n";
             Write-Output "[Error] $_.Exception.Message"
+            exit 1;
         }
         if ($DownloadOnly) {
             exit 0;
@@ -142,11 +154,18 @@ function Add-PublicKey {
 }
 
 function Main {
+
+    if ( -Not (Test-Path $tempPath)) {
+        if ($Verbose) { Write-Output "Creating temporary file path" }
+        New-Item -ItemType Directory -Path $tempPath 2>&1> $null
+    }
     Get-Download
 
     if ($install) {
         if ($Verbose) { Write-Output "[+] Moving Folder to $installDirPath" }
-        Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+        if ($binarieDirPath -ne $installDirPath){
+            Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+        }
         
         Set-installDirPermissions
         
