@@ -28,8 +28,6 @@ if ($Verbose) {
     "
 }
 
-
-
 function Get-Download {
     if ($Download -Or $DownloadOnly) {
         if (-Not $sslVerify) {
@@ -102,7 +100,7 @@ function Set-FilePermissions {
     if ($Verbose) { Write-Output "Fixing permissions" }
     & "C:\OpenSSH-Win64\FixHostFilePermissions.ps1" -Confirm:$false
     try { & "C:\OpenSSH-Win64\FixUserFilePermissions.ps1" -Confirm:$fals } catch { } # Not every user will use ssh as non-admin
-    
+
     if ($Verbose) { Write-Output "Importing module" }
     Import-Module "C:\OpenSSH-Win64\OpenSSHUtils.psm1"
     
@@ -113,13 +111,22 @@ function Set-FilePermissions {
 function Set-PublicKeyConfig {
     if ($PublicKeyOnly) {
         if ($Verbose) { Write-Output "[+] Changing sshd_config for using keys only" }
-        $key_config = $(Write-Output "`nPubkeyAuthentication  yes`nPasswordAuthentication no`nChallengeResponseAuthentication no`n")
+        $key_config = @"
+        
+        PubkeyAuthentication  yes
+        PasswordAuthentication no
+        ChallengeResponseAuthentication no
+
+"@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
         Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
         $key_config, $ssh_config | Out-File -Encoding utf8 "C:\ProgramData\ssh\sshd_config"
     }
     elseif ($PublicKey) {
-        $key_config = $(Write-Output "`nPubkeyAuthentication  yes`n")
+        $key_config = @"
+        PubkeyAuthentication  yes
+
+"@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
         Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
     }
