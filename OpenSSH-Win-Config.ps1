@@ -28,9 +28,7 @@ if ($Verbose) {
     "
 }
 
-if (-Not (Test-Path "$tempPath")) {
-    New-Item -ItemType Directory -Path "$tempPath"
-}
+
 
 function Get-Download {
     if ($Download -Or $DownloadOnly) {
