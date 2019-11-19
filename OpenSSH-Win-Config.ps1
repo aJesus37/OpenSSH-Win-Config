@@ -7,9 +7,9 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
     exit 1
 }
 
-try { $KeyPath = Resolve-Path -Path "$KeyPath"; } catch { } # Supress when no key is given
+try { $KeyPath = Resolve-Path -Path "$KeyPath" 2> $null } catch { } # Supress when no key is given
 $tempPath = Resolve-Path -Path "$tempPath";
-$binarieDirPath = Resolve-Path -Path "$binarieDirPath";
+try { $binarieDirPath = Resolve-Path -Path "$binarieDirPath" 2> $null } catch { } # Supress when folder not yet exists
 
 if ($Verbose) {
     Write-Output "
@@ -185,7 +185,9 @@ function Main {
         
         Set-FilePermissions
     
-        Add-PublicKey
+        if ($KeyPath -ne ""){
+            Add-PublicKey
+        }
         
         Set-PublicKeyConfig
         
