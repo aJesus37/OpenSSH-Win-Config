@@ -1,5 +1,5 @@
 param(
-    [switch]$install = $false, [switch]$config = $false, [switch]$uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $tempPath = "C:\temp", [string]$binarieDirPath = "$tempPath\OpenSSH-Win$($Architecture)", [string]$installDirPath = "C:\OpenSSH-Win$($architecture)"
+    [switch]$install = $false, [switch]$config = $false, [switch]$uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $tempPath = "C:\temp", [string]$binarieDirPath = "$tempPath\OpenSSH-Win$($Architecture)", [string]$installDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$installDirPermissions = $false, [switch]$addPublicKey = $false
 )
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
@@ -7,7 +7,7 @@ if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64
     exit 1
 }
 
-$KeyPath = Resolve-Path -Path "$KeyPath";
+try { $KeyPath = Resolve-Path -Path "$KeyPath"; } catch { } # Supress when no key is given
 $tempPath = Resolve-Path -Path "$tempPath";
 $binarieDirPath = Resolve-Path -Path "$binarieDirPath";
 
@@ -92,7 +92,7 @@ function Set-FirewallPermission {
             if ($Verbose) { Write-Output "Could not create windows firewall rule. Exitting..." }
             Write-Host $_.Exception.ToString()
             exit 1;
-         } 
+        } 
     }
 }
 
@@ -133,6 +133,10 @@ function Set-PublicKeyConfig {
 }
 
 function Add-PublicKey {
+    if ($KeyPath -eq "") {
+        Write-Output "[!] Error, you need to give a path to a key with the -KeyPath flag. Exitting..."
+        exit 1;
+    }
     if ($Verbose) { Write-Output "Setting content to administrators_authorized_keys file" }
     Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
 }
@@ -206,36 +210,44 @@ function Main {
 
     if ($uninstall) {
         Write-Output "[!] Uninstalling OpenSSH. Make sure the correct install path is being used. Actual: $installDirPath"
-        if ( -Not(Read-Host -Prompt "Is this directory right? [y/N]") -imatch "[yY]|[yY][eE][sS]") {
+        if ((Read-Host -Prompt "Is this directory right? [y/N]") -imatch "y|Y|YES|yes|Yes") {    
+            if($Verbose){Write-Output "[+] Stopping services"}
+            Stop-Service sshd
+            Stop-Service ssh-agent
+
+            try {
+                if($Verbose){Write-Output "[+] Uninstalling sshd"}
+                & "$installDirPath\uninstall-sshd.ps1"
+            }
+            catch {
+                if ($Verbose) { Write-Output "[!] Could not uninstall sshd with the $installDirPath\uninstall-sshd.ps1 script:" }
+                Write-Host $_.Exception.ToString()
+            }
+
+            try {
+                if($Verbose){Write-Output "[+] Removing folder C:\ProgramData\ssh\"}
+                Remove-Item -Force -Recurse -Path "C:\ProgramData\ssh\"
+            }
+            catch {
+                if ($Verbose) { Write-Output "[!] Could not remove folder C:\ProgramData\ssh\, is it being used?" }
+                Write-Host $_.Exception.ToString()
+            }
+
+            try {
+                if($Verbose){Write-Output "[+] Removing folder $installDirPath"}
+                Remove-Item -Force -Recurse -Path "$installDirPath"
+            }
+            catch {
+                if ($Verbose) { Write-Output "[!] Could not remove folder $installDirPath, is it being used?" }
+                Write-Host $_.Exception.ToString()
+            }
+            if($Verbose){Write-Output "[+] Uninstall Succeded. Exitting..."}
+        }
+        else {
             Write-Host "Exitting ..."
             exit 0;
         }
-        Stop-Service sshd
-        Stop-Service ssh-agent
-
-        try {
-            & "$installDirPath\uninstall-sshd.ps1"
-        }
-        catch {
-            if ($Verbose) { Write-Output "[!] Could not uninstall sshd with the $installDirPath\uninstall-sshd.ps1 script:" }
-            Write-Host $_.Exception.ToString()
-        }
-
-        try {
-            Remove-Item -Force -Recurse -Path "C:\ProgramData\ssh\"
-        }
-        catch {
-            if ($Verbose) { Write-Output "[!] Could not remove folder C:\ProgramData\ssh\, is it being used?" }
-            Write-Host $_.Exception.ToString()
-        }
-
-        try {
-            Remove-Item -Force -Recurse -Path "$installDirPath"
-        }
-        catch {
-            if ($Verbose) { Write-Output "[!] Could not remove folder $installDirPath, is it being used?" }
-            Write-Host $_.Exception.ToString()
-        }
+        
     }
 }
 
