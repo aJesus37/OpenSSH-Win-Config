@@ -2,13 +2,13 @@ param(
     [switch]$install = $false, [switch]$config = $false, [switch]$uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $tempPath = "C:\temp", [string]$binarieDirPath = "$tempPath\OpenSSH-Win$($Architecture)", [string]$installDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$installDirPermissions = $false, [switch]$addPublicKey = $false
 )
 
-if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
+if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) { # Check whether the architecture is 32 or 64 bits. Closes if different.
     Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
     exit 1
 }
-
+# Resolve the paths into absolute paths
 $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore
-if($tempVar){
+if($tempVar){ 
     $KeyPath = $tempVar; Clear-Variable tempVar
 }
 
@@ -21,7 +21,7 @@ $tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore
 if($tempVar){
     $binarieDirPath = $tempVar; Clear-Variable tempVar
 }
-
+#Show variable contents if verbose
 if ($Verbose) {
     Write-Output "
     Shell: $Shell
@@ -39,7 +39,7 @@ if ($Verbose) {
     "
 }
 
-function Get-Download {
+function Get-Download { # Downloads the binaries for the OpenSSH
     if ($Download -Or $DownloadOnly) {
         if (-Not $sslVerify) {
             ######ignore invalid SSL Certs - Do Not Change
@@ -80,14 +80,14 @@ function Get-Download {
     }
 }
 
-function Set-InstallDirPermissions {
+function Set-InstallDirPermissions { # Define correct User permissions for the installer directory
     $UsersPermissions = New-Object System.Security.AccessControl.FileSystemAccessRule "Users", "ReadAndExecute, Synchronize", "ContainerInherit, ObjectInherit", "InheritOnly", "Allow"
     $Acl = Get-Acl $installDirPath
     $Acl.SetAccessRule($UsersPermissions)
     Set-Acl $installDirPath $Acl
 }
 
-function Set-FirewallPermission {
+function Set-FirewallPermission { # Create windows firewall rule enabling traffic on port 22
     if ($Verbose) { Write-Output "[+] Adding firewall rule to Windows firewall" }
     try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -ErrorAction SilentlyContinue }
     catch [Microsoft.Management.Infrastructure.CimException] {
@@ -108,7 +108,7 @@ function Set-FirewallPermission {
     }
 }
 
-function Set-FilePermissions {
+function Set-FilePermissions { #Fix file permissions. Needed by OpenSSH Windows port to work
     if ($Verbose) { Write-Output "Fixing permissions" }
     & "C:\OpenSSH-Win64\FixHostFilePermissions.ps1" -Confirm:$false
     try { & "C:\OpenSSH-Win64\FixUserFilePermissions.ps1" -Confirm:$fals } catch { } # Not every user will use ssh as non-admin
@@ -120,7 +120,7 @@ function Set-FilePermissions {
     Repair-FilePermission -FilePath "C:\ProgramData\ssh\administrators_authorized_keys" -Confirm:$false
 }
 
-function Set-PublicKeyConfig {
+function Set-PublicKeyConfig { # Defines if public key will be enabled or mandatory
     if ($PublicKeyOnly) {
         if ($Verbose) { Write-Output "[+] Changing sshd_config for using keys only" }
         $key_config = @"
@@ -144,7 +144,7 @@ function Set-PublicKeyConfig {
     }
 }
 
-function Add-PublicKey {
+function Add-PublicKey { # Add a new public key to the administrators keys file
     if ($KeyPath -eq "") {
         Write-Output "[!] Error, you need to give a path to a key with the -KeyPath flag. Exitting..."
         exit 1;
@@ -153,36 +153,35 @@ function Add-PublicKey {
     Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
 }
 
-function Main {
+function Main { # Main function
 
-    if ( -Not (Test-Path $tempPath)) {
+    if ( -Not (Test-Path $tempPath)) { # Check if the temporary folder given exists, if not creates it
         if ($Verbose) { Write-Output "Creating temporary file path" }
         New-Item -ItemType Directory -Path $tempPath 2>&1> $null
     }
-    Get-Download
+    Get-Download # Downloads binarie for OpenSSH
 
-    if ($install) {
+    if ($install) { # Installation begins here
         if ($Verbose) { Write-Output "[+] Moving Folder to $installDirPath" }
         if ($binarieDirPath -ne $installDirPath){
             Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
         }
         
-        Set-installDirPermissions
+        Set-installDirPermissions # Set Installation directory file permissions to group Users
         
         if ($Verbose) { Write-Output "[+] Installing sshd as service" }
-        & "$installDirPath\install-sshd.ps1"
-        #& "$installDirPath\install-sshd.ps1"
+        & "$installDirPath\install-sshd.ps1" # Install sshd as a service. Builtin with the binarie
         
-        Set-firewallPermission
+        Set-firewallPermission # Create firewall rule
         
-        if ($Verbose) { Write-Output "[+] Changing startup and status of services" }
+        if ($Verbose) { Write-Output "[+] Changing startup and status of services" } # Change startup type and start services to create the C:\ProgramData\ssh\ folder and files
         Set-Service sshd -StartupType Automatic
         Set-Service ssh-agent -StartupType Automatic
         Start-Service sshd
         Start-Service ssh-agent
         
         
-        if ($shell -eq "powershell") {
+        if ($shell -eq "powershell") { # Defines powershell as default shell
             if ($Verbose) { Write-Output "Changing Default shell" }
             New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
             New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "/c" -PropertyType String -Force
@@ -192,44 +191,44 @@ function Main {
         Stop-Service sshd
         Stop-Service ssh-agent
     
-        if ( -Not (Test-Path C:\ProgramData\ssh\administrators_authorized_keys)) {
+        if ( -Not (Test-Path C:\ProgramData\ssh\administrators_authorized_keys)) { # Check if file already exists, if not creates it
             if ($Verbose) { Write-Output "Creating administrators_authorized_keys file" }
             New-Item -ItemType File -Path C:\ProgramData\ssh\administrators_authorized_keys
         }
         
-        if ($Verbose) { Write-Output "Changing path" }
-        $oldSysPath = (Get-Itemproperty -path 'hklm:\system\currentcontrolset\control\session manager\environment' -Name Path).Path
-        $newSysPath = $oldSysPath + ";C:\OpenSSH-Win64\"
-        Set-ItemProperty -path 'hklm:\system\currentcontrolset\control\session manager\environment' -Name Path -Value $newSysPath 
+        if ($Verbose) { Write-Output "Changing path" } # Changing environment variable PATH to add the path to the binaries
+        $oldPath=(Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINESystemCurrentControlSetControlSession ManagerEnvironment’ -Name PATH).Path
+        $newPath=$oldPath+";$installDirPath"
+        Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINESystemCurrentControlSetControlSession ManagerEnvironment’ -Name PATH –Value $newPath 
         
-        Set-FilePermissions
+        Set-FilePermissions # Set files need by OpenSSH permissions
     
-        if ($KeyPath -ne ""){
+        if ($KeyPath -ne ""){ # Add public key if a path was given
             Add-PublicKey
         }
         
-        Set-PublicKeyConfig
+        Set-PublicKeyConfig # Define public key permissions
         
         if ($Verbose) { Write-Output "Starting services" }
         Start-Service sshd  
         Start-Service ssh-agent
     }
 
-    if ($config) {
+    if ($config) { # Configuration use case
         if ($FilePermissions) {
-            Set-FilePermissions
+            Set-FilePermissions # Set files need by OpenSSH permissions
         }
 
         if ($installDirPermissions) {
-            Set-InstallDirPermissions
+            Set-InstallDirPermissions # Set Installation directory file permissions to group Users
         }
 
         if ($addPublicKey) {
-            Add-PublicKey
+            Add-PublicKey # Add public key
         }
     }
 
-    if ($uninstall) {
+    if ($uninstall) { # Uninstall use case
         Write-Output "[!] Uninstalling OpenSSH. Make sure the correct install path is being used. Actual: $installDirPath"
         if ((Read-Host -Prompt "Is this directory right? [y/N]") -imatch "y|Y|YES|yes|Yes") {    
             if($Verbose){Write-Output "[+] Stopping services"}
@@ -238,14 +237,14 @@ function Main {
 
             try {
                 if($Verbose){Write-Output "[+] Uninstalling sshd"}
-                & "$installDirPath\uninstall-sshd.ps1"
+                & "$installDirPath\uninstall-sshd.ps1" # Remove sshd as service using builtin binaries
             }
             catch {
                 if ($Verbose) { Write-Output "[!] Could not uninstall sshd with the $installDirPath\uninstall-sshd.ps1 script:" }
                 Write-Host $_.Exception.ToString()
             }
 
-            try {
+            try { # Remove programdata dir
                 if($Verbose){Write-Output "[+] Removing folder C:\ProgramData\ssh\"}
                 Remove-Item -Force -Recurse -Path "C:\ProgramData\ssh\"
             }
@@ -254,7 +253,7 @@ function Main {
                 Write-Host $_.Exception.ToString()
             }
 
-            try {
+            try { # Remove installation dir
                 if($Verbose){Write-Output "[+] Removing folder $installDirPath"}
                 Remove-Item -Force -Recurse -Path "$installDirPath"
             }
@@ -272,4 +271,4 @@ function Main {
     }
 }
 
-Main
+Main # Run main function
