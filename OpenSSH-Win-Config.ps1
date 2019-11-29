@@ -1,5 +1,5 @@
 param(
-    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false
+    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$sharedFolder=$false
 )
 
 if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
@@ -93,7 +93,7 @@ function Set-InstallDirPermissions {
 function Set-FirewallPermission {
     # Create windows firewall rule enabling traffic on port 22
     if ($Verbose) { Write-Output "[+] Adding firewall rule to Windows firewall" }
-    try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -ErrorAction SilentlyContinue }
+    try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort $ServicePort -ErrorAction SilentlyContinue }
     catch [Microsoft.Management.Infrastructure.CimException] {
         if ($Verbose) { Write-Output "[?] Regra já criada, continuando ..." }
         Write-Host $_.Exception.ToString()
@@ -172,9 +172,13 @@ function Main {
 
     if ($install) {
         # Installation begins here
-        if ($Verbose) { Write-Output "[+] Moving Folder to $installDirPath" }
+        if ($Verbose) { Write-Output "[+] Sending Folder to $installDirPath" }
         if ($binarieDirPath -ne $installDirPath) {
-            Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+            if(-Not ($sharedFolder)){
+                Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+            } else {
+                Copy-Item -Path "$binarieDirPath" -Destination "$installDirPath" -Recurse
+            }
         }
         
         Set-installDirPermissions # Set Installation directory file permissions to group Users
