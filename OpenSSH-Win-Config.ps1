@@ -173,7 +173,7 @@ function Add-PublicKey {
     Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
 }
 
-function Main {
+function Start-Main {
     # Main function
 
     Initialize-Variables # Check if the variables are right
@@ -300,4 +300,4 @@ function Main {
     }
 }
 
-Main # Run main function
+Start-Main # Run main function
