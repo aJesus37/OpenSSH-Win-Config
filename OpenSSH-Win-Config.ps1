@@ -10,9 +10,11 @@ function Initialize-Variables {
         exit 1
     } 
     # Resolve the paths into absolute paths
-    $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore 2> $null
-    if ($tempVar) { 
-        $KeyPath = $tempVar; Clear-Variable tempVar
+    if ($null -ne $KeyPath) {
+        $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore 2> $null
+        if ($tempVar) { 
+            $KeyPath = $tempVar; Clear-Variable tempVar
+        }
     }
 
     $tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore 2> $null
