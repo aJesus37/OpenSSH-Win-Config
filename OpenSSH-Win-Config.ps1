@@ -1,5 +1,5 @@
 param(
-    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$SharedFolder=$false
+    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = $null, [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$SharedFolder=$false
 )
 
 function Initialize-Variables {
@@ -10,7 +10,7 @@ function Initialize-Variables {
         exit 1
     } 
     # Resolve the paths into absolute paths
-    if ($null -ne $KeyPath) {
+    if ("" -ne $KeyPath) {
         $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore 2> $null
         if ($tempVar) { 
             $KeyPath = $tempVar; Clear-Variable tempVar
