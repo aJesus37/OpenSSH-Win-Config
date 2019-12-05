@@ -2,27 +2,30 @@ param(
     [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$sharedFolder=$false
 )
 
-if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
-    # Check whether the architecture is 32 or 64 bits. Closes if different.
-    Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
-    exit 1
-}
-# Resolve the paths into absolute paths
-$tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore
-if ($tempVar) { 
-    $KeyPath = $tempVar; Clear-Variable tempVar
-}
+function Initialize-Variables {
+    # Function to validade all the variables needed by the script
+    if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
+        # Check whether the architecture is 32 or 64 bits. Closes if different.
+        Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
+        exit 1
+    } 
+    # Resolve the paths into absolute paths
+    $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) { 
+        $KeyPath = $tempVar; Clear-Variable tempVar
+    }
 
-$tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore
-if ($tempVar) {
-    $tempPath = $tempVar; Clear-Variable tempVar
-}
+    $tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) {
+        $tempPath = $tempVar; Clear-Variable tempVar
+    }
 
-$tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore
-if ($tempVar) {
-    $binarieDirPath = $tempVar; Clear-Variable tempVar
-}
-#Show variable contents if verbose
+    $tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) {
+        $binarieDirPath = $tempVar; Clear-Variable tempVar
+    }
+
+    #Show variable contents if verbose
 if ($Verbose) {
     Write-Output "
     Shell: $Shell
@@ -38,6 +41,13 @@ if ($Verbose) {
     binarieDirPath: $binarieDirPath
     installDirPath: $installDirPath
     "
+}
+
+    if ( -Not (Test-Path $tempPath)) {
+        # Check if the temporary folder given exists, if not creates it
+        if ($Verbose) { Write-Output "Creating temporary file path" }
+        New-Item -ItemType Directory -Path $tempPath 2>&1> $null
+    }
 }
 
 function Get-Download {
@@ -166,11 +176,7 @@ function Add-PublicKey {
 function Main {
     # Main function
 
-    if ( -Not (Test-Path $tempPath)) {
-        # Check if the temporary folder given exists, if not creates it
-        if ($Verbose) { Write-Output "Creating temporary file path" }
-        New-Item -ItemType Directory -Path $tempPath 2>&1> $null
-    }
+    Initialize-Variables # Check if the variables are right
     Get-Download # Downloads binarie for OpenSSH
 
     if ($install) {
