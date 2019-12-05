@@ -1,5 +1,5 @@
 param(
-    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$sharedFolder=$false
+    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$SharedFolder=$false
 )
 
 function Initialize-Variables {
