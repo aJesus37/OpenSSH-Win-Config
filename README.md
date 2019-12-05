@@ -31,41 +31,45 @@ Fixes the file permissions on the directory where OpenSSH is installed
 
 ## Possible flags:
 
-   **-Install:** Needed if you pretend to install OpenSSH on Windows. Default: `$false`
+   **-Install:** Needed if you pretend to install OpenSSH on Windows. Default: `$false` (Boolean)
 
-   **-Config:** Configuration related, demands OpenSSH installed. Default: `$false`
+   **-Config:** Configuration related, demands OpenSSH installed. Default: `$false` (Boolean)
 
-   **-Uninstall:** Uninstalls OpenSSH from the machine. Default: `$false`
+   **-Uninstall:** Uninstalls OpenSSH from the machine. Default: `$false` (Boolean)
 
-   **-TempPath:** Path used for temporary files like downloading and extracting from github. Default: `C:\temp`
+   **-TempPath:** Path used for temporary files like downloading and extracting from github. Default: `C:\temp` (String)
 
-   **-BinarieDirPath:** The path to thebinaries folder for the OpenSSH software. Default: `$TempPath\OpenSSH-Win$($Architecture)`
+   **-BinarieDirPath:** The path to thebinaries folder for the OpenSSH software. Default: `$TempPath\OpenSSH-Win$($Architecture)` (String)
 
-   **-InstallDirPath:** The path where OpenSSH will be installed. Default: `C:\OpenSSH-Win$($Architecture)`
+   **-InstallDirPath:** The path where OpenSSH will be installed. Default: `C:\OpenSSH-Win$($Architecture)` (String)
 
-   **-FilePermissions** Used with the -Config flag, used when you want to correct the permissions of files used by the OpenSSH software. Default: `$false`
+   **-FilePermissions** Used with the -Config flag, used when you want to correct the permissions of files used by the OpenSSH software. Default: `$false` (Boolean)
 
-   **-InstallDirPermissions:** Used with the -Config flag, used when you want to correct the permissions of the directory where OpenSSH was installed. Default: `$false`
+   **-InstallDirPermissions:** Used with the -Config flag, used when you want to correct the permissions of the directory where OpenSSH was installed. Default: `$false` (Boolean)
 
-   **-AddPublicKey:** Used with the -Config flag, used when you want to add another key to the administrators_authorized_keys file. Needs a KeyPath defined. Default: `$false`
+   **-AddPublicKey:** Used with the -Config flag, used when you want to add another key to the administrators_authorized_keys file. Needs a KeyPath defined. Default: `$false` (Boolean)
 
-   **-sslVerify:** Checks for valid certificate. Used with the -Download flag. Default: `$false`
+   **-sslVerify:** Checks for valid certificate. Used with the -Download flag. Default: `$false` (Boolean)
 
-   **-Verbose:** Adds verbosity level to script output. Default: `$false`
+   **-Verbose:** Adds verbosity level to script output. Default: `$false` (Boolean)
 
-   **-Download:** Defines if will try to download the binaries from GitHub or install directly from machine. Default: `$false`
+   **-Download:** Defines if will try to download the binaries from GitHub or install directly from machine. Default: `$false` (Boolean)
 
-   **-Shell:** Defines if the default shell after ssh into the machine will be cmd or powershell. Default: `powershell`
+   **-Shell:** Defines if the default shell after ssh into the machine will be cmd or powershell. Default: `powershell` (String)
 
-   **-Architecture:** Defines if the binarie architecture will be 64 or 32 bits. Default: `64`
+   **-Architecture:** Defines if the binarie architecture will be 64 or 32 bits. Default: `64` (Int)
    
-   **-DownloadOnly:** Only downloads the binaries to `C:\temp\`, not installing. Default: `$false`
+   **-DownloadOnly:** Only downloads the binaries to `C:\temp\`, not installing. Default: `$false` (Boolean)
    
-   **-PublicKeyOnly:** Defines if only public key authentication will be enabled. Default: `$false`
+   **-PublicKeyOnly:** Defines if only public key authentication will be enabled. Default: `$false` (Boolean)
    
-   **-PublicKey:** Defines if public key authentication will be allowed. Default: `$false`
+   **-PublicKey:** Defines if public key authentication will be allowed. Default: `$false` (Boolean)
    
-   **-KeyPath:** Defines the path to the key file for using with public key authentication. Default: `$null`
+   **-KeyPath:** Defines the path to the key file for using with public key authentication. Default: `$null` (String)
+
+   **-ServicePort:** Defines the port on which SSH will listen. Default: `22` (Int)
+
+   **-SharedFolder:** Defines if the folder used will be shared or can be moved (instead of copied). Default: `$false` (Boolean)
 
 
 

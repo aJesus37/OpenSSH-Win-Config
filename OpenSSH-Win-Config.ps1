@@ -1,43 +1,53 @@
 param(
-    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false
+    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = "", [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$SharedFolder=$false
 )
 
-if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
-    # Check whether the architecture is 32 or 64 bits. Closes if different.
-    Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
-    exit 1
-}
-# Resolve the paths into absolute paths
-$tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore
-if ($tempVar) { 
-    $KeyPath = $tempVar; Clear-Variable tempVar
-}
+function Initialize-Variables {
+    # Function to validade all the variables needed by the script
+    if ($Architecture -ne "64" -And $Architecture -ne "32" -And $Architecture -ne 64 -And $Architecture -ne 32) {
+        # Check whether the architecture is 32 or 64 bits. Closes if different.
+        Write-Output "Only 32 or 64 are allowed as values for -architecture. Exitting..."
+        exit 1
+    } 
+    # Resolve the paths into absolute paths
+    $tempVar = Resolve-Path -Path "$KeyPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) { 
+        $KeyPath = $tempVar; Clear-Variable tempVar
+    }
 
-$tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore
-if ($tempVar) {
-    $tempPath = $tempVar; Clear-Variable tempVar
-}
+    $tempVar = Resolve-Path -Path "$tempPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) {
+        $tempPath = $tempVar; Clear-Variable tempVar
+    }
 
-$tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore
-if ($tempVar) {
-    $binarieDirPath = $tempVar; Clear-Variable tempVar
-}
-#Show variable contents if verbose
-if ($Verbose) {
-    Write-Output "
-    Shell: $Shell
-    Download: $Download
-    Verbose: $Verbose
-    Architecture: $Architecture
-    DownloadOnly: $DownloadOnly
-    PublicKeyOnly: $PublicKeyOnly
-    KeyPath: $KeyPath
-    PublicKey: $PublicKey
-    sslVerify: $sslVerify
-    tempPath: $tempPath
-    binarieDirPath: $binarieDirPath
-    installDirPath: $installDirPath
-    "
+    $tempVar = Resolve-Path -Path "$binarieDirPath" -ErrorAction Ignore 2> $null
+    if ($tempVar) {
+        $binarieDirPath = $tempVar; Clear-Variable tempVar
+    }
+
+    #Show variable contents if verbose
+    if ($Verbose) {
+        Write-Output "
+        Shell: $Shell
+        Download: $Download
+        Verbose: $Verbose
+        Architecture: $Architecture
+        DownloadOnly: $DownloadOnly
+        PublicKeyOnly: $PublicKeyOnly
+        KeyPath: $KeyPath
+        PublicKey: $PublicKey
+        sslVerify: $sslVerify
+        tempPath: $tempPath
+        binarieDirPath: $binarieDirPath
+        installDirPath: $installDirPath
+        "
+    }
+
+    if ( -Not (Test-Path $tempPath)) {
+        # Check if the temporary folder given exists, if not creates it
+        if ($Verbose) { Write-Output "Creating temporary file path" }
+        New-Item -ItemType Directory -Path $tempPath 2>&1> $null
+    }
 }
 
 function Get-Download {
@@ -93,7 +103,7 @@ function Set-InstallDirPermissions {
 function Set-FirewallPermission {
     # Create windows firewall rule enabling traffic on port 22
     if ($Verbose) { Write-Output "[+] Adding firewall rule to Windows firewall" }
-    try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -ErrorAction SilentlyContinue }
+    try { New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort $ServicePort -ErrorAction SilentlyContinue }
     catch [Microsoft.Management.Infrastructure.CimException] {
         if ($Verbose) { Write-Output "[?] Regra já criada, continuando ..." }
         Write-Host $_.Exception.ToString()
@@ -137,6 +147,9 @@ function Set-PublicKeyConfig {
 
 "@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
+        if ($ServicePort -ne 22){
+            $ssh_config =$($ssh_config -replace "#Port 22","Port $ServicePort")
+        }
         Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
         $key_config, $ssh_config | Out-File -Encoding utf8 "C:\ProgramData\ssh\sshd_config"
     }
@@ -160,21 +173,21 @@ function Add-PublicKey {
     Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
 }
 
-function Main {
+function Start-Main {
     # Main function
 
-    if ( -Not (Test-Path $tempPath)) {
-        # Check if the temporary folder given exists, if not creates it
-        if ($Verbose) { Write-Output "Creating temporary file path" }
-        New-Item -ItemType Directory -Path $tempPath 2>&1> $null
-    }
+    Initialize-Variables # Check if the variables are right
     Get-Download # Downloads binarie for OpenSSH
 
     if ($install) {
         # Installation begins here
-        if ($Verbose) { Write-Output "[+] Moving Folder to $installDirPath" }
+        if ($Verbose) { Write-Output "[+] Sending Folder to $installDirPath" }
         if ($binarieDirPath -ne $installDirPath) {
-            Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+            if(-Not ($sharedFolder)){
+                Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+            } else {
+                Copy-Item -Path "$binarieDirPath" -Destination "$installDirPath" -Recurse
+            }
         }
         
         Set-installDirPermissions # Set Installation directory file permissions to group Users
@@ -287,4 +300,4 @@ function Main {
     }
 }
 
-Main # Run main function
+Start-Main # Run main function
