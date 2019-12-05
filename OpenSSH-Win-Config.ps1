@@ -1,5 +1,5 @@
 param(
-    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = $null, [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false,[Int]$ServicePort=22,[switch]$SharedFolder=$false
+    [switch]$Install = $false, [switch]$Config = $false, [switch]$Uninstall = $false, [string]$Shell = "powershell", [switch]$Download = $false, [switch]$Verbose = $false, [string]$Architecture = 64, [switch]$DownloadOnly = $false, [switch]$PublicKeyOnly = $false, [string]$KeyPath = $null, [switch]$PublicKey = $false, [switch]$sslVerify = $false, $TempPath = "C:\temp", [string]$BinarieDirPath = "$TempPath\OpenSSH-Win$($Architecture)", [string]$InstallDirPath = "C:\OpenSSH-Win$($architecture)", [switch]$FilePermissions = $false, [switch]$InstallDirPermissions = $false, [switch]$AddPublicKey = $false, [Int]$ServicePort = 22, [switch]$SharedFolder = $false
 )
 
 function Initialize-Variables {
@@ -75,9 +75,9 @@ function Get-Download {
             #######################################################################################
         }
         try {
-            if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Downloading latest release of OpenSSH-Win$($Architecture)"  | Tee-Object $tempPath\OpenSSH-Config.log -Append}
+            if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Downloading latest release of OpenSSH-Win$($Architecture)" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
             Invoke-WebRequest -Uri "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win$($Architecture).zip" -OutFile "$tempPath\OpenSSH-Win$($Architecture).zip" -UseBasicParsing
-            if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Extracting file..." | Tee-Object $tempPath\OpenSSH-Config.log -Append}
+            if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Extracting file..." | Tee-Object $tempPath\OpenSSH-Config.log -Append }
             Expand-Archive -LiteralPath "$tempPath\OpenSSH-Win$($Architecture).zip" -DestinationPath "$tempPath\OpenSSH-Win"
             if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Moving folder to $tempPath\" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
             Move-Item -LiteralPath "$tempPath\OpenSSH-Win\OpenSSH-Win$($Architecture)" -Destination "$tempPath\OpenSSH-Win$($Architecture)"
@@ -149,8 +149,8 @@ function Set-PublicKeyConfig {
 
 "@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
-        if ($ServicePort -ne 22){
-            $ssh_config =$($ssh_config -replace "#Port 22","Port $ServicePort")
+        if ($ServicePort -ne 22) {
+            $ssh_config = $($ssh_config -replace "#Port 22", "Port $ServicePort")
         }
         Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
         $key_config, $ssh_config | Out-File -Encoding utf8 "C:\ProgramData\ssh\sshd_config"
@@ -185,22 +185,21 @@ function Start-Main {
         # Installation begins here
         if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Sending Folder to $installDirPath" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
         if ($binarieDirPath -ne $installDirPath) {
-            if(-Not ($sharedFolder)){
-                try {
+            if (Test-Path $binarieDirPath) {
+                if (-Not ($sharedFolder)) {
                     Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
-                } catch {
-                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Erros happened while installing the files. Please read below:`n" | Tee-Object $tempPath\OpenSSH-Config.log -Append
-                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [Error] $_.Exception.Message" | Tee-Object $tempPath\OpenSSH-Config.log -Append
                 }
-            } else {
-                try{
+                else {
                     Copy-Item -Path "$binarieDirPath" -Destination "$installDirPath" -Recurse
-                } catch {
-                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Erros happened while installing the files. Please read below:`n" | Tee-Object $tempPath\OpenSSH-Config.log -Append
-                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [Error] $_.Exception.Message" | Tee-Object $tempPath\OpenSSH-Config.log -Append
                 }
             }
+            else {
+                $currentUser=whoami
+                Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - The given binarieDirPath could not be reached. Please check if the folder exists and if the current user ($($currentUser)) has access to the directory." | Tee-Object $tempPath\OpenSSH-Config.log -Append
+                exit 1;
+            }
         }
+            
         
         Set-installDirPermissions # Set Installation directory file permissions to group Users
         
