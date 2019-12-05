@@ -42,7 +42,7 @@ function Initialize-Variables {
         tempPath: $tempPath
         binarieDirPath: $binarieDirPath
         installDirPath: $installDirPath
-        " | Tee-Object $tempPath\OpenSSH-Config.log -Append -Append
+        " | Tee-Object $tempPath\OpenSSH-Config.log -Append
     }
 
     if ( -Not (Test-Path $tempPath)) {
@@ -186,9 +186,19 @@ function Start-Main {
         if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Sending Folder to $installDirPath" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
         if ($binarieDirPath -ne $installDirPath) {
             if(-Not ($sharedFolder)){
-                Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+                try {
+                    Move-Item -Path "$binarieDirPath" -Destination "$installDirPath"
+                } catch {
+                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Erros happened while installing the files. Please read below:`n" | Tee-Object $tempPath\OpenSSH-Config.log -Append
+                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [Error] $_.Exception.Message" | Tee-Object $tempPath\OpenSSH-Config.log -Append
+                }
             } else {
-                Copy-Item -Path "$binarieDirPath" -Destination "$installDirPath" -Recurse
+                try{
+                    Copy-Item -Path "$binarieDirPath" -Destination "$installDirPath" -Recurse
+                } catch {
+                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Erros happened while installing the files. Please read below:`n" | Tee-Object $tempPath\OpenSSH-Config.log -Append
+                    Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [Error] $_.Exception.Message" | Tee-Object $tempPath\OpenSSH-Config.log -Append
+                }
             }
         }
         
