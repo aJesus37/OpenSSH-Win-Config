@@ -26,22 +26,22 @@ function Initialize-Variables {
     }
 
     #Show variable contents if verbose
-if ($Verbose) {
-    Write-Output "
-    Shell: $Shell
-    Download: $Download
-    Verbose: $Verbose
-    Architecture: $Architecture
-    DownloadOnly: $DownloadOnly
-    PublicKeyOnly: $PublicKeyOnly
-    KeyPath: $KeyPath
-    PublicKey: $PublicKey
-    sslVerify: $sslVerify
-    tempPath: $tempPath
-    binarieDirPath: $binarieDirPath
-    installDirPath: $installDirPath
-    "
-}
+    if ($Verbose) {
+        Write-Output "
+        Shell: $Shell
+        Download: $Download
+        Verbose: $Verbose
+        Architecture: $Architecture
+        DownloadOnly: $DownloadOnly
+        PublicKeyOnly: $PublicKeyOnly
+        KeyPath: $KeyPath
+        PublicKey: $PublicKey
+        sslVerify: $sslVerify
+        tempPath: $tempPath
+        binarieDirPath: $binarieDirPath
+        installDirPath: $installDirPath
+        "
+    }
 
     if ( -Not (Test-Path $tempPath)) {
         # Check if the temporary folder given exists, if not creates it
