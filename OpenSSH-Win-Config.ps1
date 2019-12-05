@@ -137,6 +137,9 @@ function Set-PublicKeyConfig {
 
 "@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
+        if ($ServicePort -ne 22){
+            $ssh_config =$($ssh_config -replace "#Port 22","Port $ServicePort")
+        }
         Move-Item -Path "C:\ProgramData\ssh\sshd_config" -Destination "C:\ProgramData\ssh\sshd_config.old"
         $key_config, $ssh_config | Out-File -Encoding utf8 "C:\ProgramData\ssh\sshd_config"
     }
