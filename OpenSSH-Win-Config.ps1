@@ -142,10 +142,10 @@ function Set-PublicKeyConfig {
     if ($PublicKeyOnly) {
         if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Changing sshd_config for using keys only" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
         $key_config = @"
-        
-        PubkeyAuthentication  yes
-        PasswordAuthentication no
-        ChallengeResponseAuthentication no
+
+PubkeyAuthentication  yes
+PasswordAuthentication no
+ChallengeResponseAuthentication no
 
 "@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
@@ -157,7 +157,7 @@ function Set-PublicKeyConfig {
     }
     elseif ($PublicKey) {
         $key_config = @"
-        PubkeyAuthentication  yes
+PubkeyAuthentication  yes
 
 "@
         $ssh_config = $(Get-Content "C:\ProgramData\ssh\sshd_config" -Encoding utf8)
@@ -173,6 +173,14 @@ function Add-PublicKey {
     }
     if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Setting content to administrators_authorized_keys file" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
     Get-Content "$KeyPath" | Out-File -Encoding utf8 "C:\ProgramData\ssh\administrators_authorized_keys" -Append
+}
+
+function Set-AdminKeyPermissions {
+    if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - [+] Changing administrators_authorized_keys owner to NT AUTHORITY\SYSTEM" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
+    $objUser = New-Object System.Security.Principal.NTAccount("NT AUTHORITY\SYSTEM")
+    $objFile = Get-Acl -Path "C:\ProgramData\ssh\administrators_authorized_keys"
+    $objFile.SetOwner($objUser)
+    Set-Acl -AclObject $objFile -Path "C:\ProgramData\ssh\administrators_authorized_keys"
 }
 
 function Start-Main {
@@ -238,13 +246,16 @@ function Start-Main {
         Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath
 
         Set-FilePermissions # Set files need by OpenSSH permissions
-    
+        Set-FilePermissions # Sometimes running it only once won't change all the needed permissions
+
         if ($KeyPath -ne "") {
             # Add public key if a path was given
             Add-PublicKey
         }
         
         Set-PublicKeyConfig # Define public key permissions
+
+        Set-AdminKeyPermissions # Define the owner of administrator_authorized_keys to NT AUTHORITY\SYSTEM
         
         if ($Verbose) { Write-Output "[ $(get-date -Format "dddd MM/dd/yyyy HH:mm:ss K") ] - Starting services" | Tee-Object $tempPath\OpenSSH-Config.log -Append }
         Start-Service sshd  
